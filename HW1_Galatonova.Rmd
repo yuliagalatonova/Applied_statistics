@@ -1,0 +1,61 @@
+---
+title: "Galatonova_HW1_applied_statistics"
+author: "Yulia Galatonova"
+date: '2022-03-29'
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+```
+
+## Creating dots and figure
+
+```{r}
+X <- seq(from=-pi/2, to=pi/2, length.out=100)
+Y <- 2*abs(X) - pi
+Z <- abs(sin(2*X))
+
+dots_x_coord <- runif(2000, min= -pi/2, max = pi/2)
+dots_y_coord <- runif(2000, min = -pi, max = 1)
+
+dots <- data.frame(x = dots_x_coord, y = dots_y_coord)
+figure1 <- data.frame(x=X, y=Y)
+figure2 <- data.frame(x=X, y=Z)
+```
+
+## Visualizing dots and figure
+
+```{r}
+ggplot() +
+  geom_line(data = figure1, aes(x=x, y=y), colour="blue", size=1) + 
+  geom_line(data = figure2, aes(x=x, y=y), colour="blue", size=1) +
+  geom_point(data = dots, aes(x=x, y=y), colour="darkgreen")
+```
+
+## Counting dots inside the figure
+
+```{r}
+dots_count = 0  
+for(i in 1:2000) {
+  X = dots_x_coord[i]
+  Y <- 2*abs(X) - pi
+  Z <- abs(sin(2*X))
+  if(dots_y_coord[i]<=Z & dots_y_coord[i]>=Y) {
+     dots_count <- dots_count + 1
+  }
+}
+cat("Number of dots:", dots_count)
+```
+
+## Calculation of the figure area
+
+```{r}
+external_rectangle_area <- pi * (1 + pi) # horizontal side of rectangle with dots is pi (pi/2+pi/2) and vertical side of rectangle with dots is (1 + pi)
+dots_ratio <- dots_count / 2000 # number of dots inside figure / total number of dots
+figure_area <- external_rectangle_area * dots_ratio
+cat("Area of external rectangle:", external_rectangle_area)
+cat("Area of the figure:", figure_area)
+```
