@@ -1,0 +1,172 @@
+---
+title: "HW2_Galatonova"
+author: "Yulia Galatonova"
+date: '2022-04-11'
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+setwd('/Users/yulia/Documents/учеба/учеба/applied statistics')
+deck <- read.csv('deck.csv')
+```
+
+## Player's and dealer's hands
+
+```{r}
+players_hand <- data.frame(face=character(),
+                 suit=character(), 
+                 value=integer()) 
+
+dealers_hand <- data.frame(face=character(),
+                 suit=character(), 
+                 value=integer())
+```
+
+## Shuffle function
+
+```{r}
+shuffle <- function(cards) { 
+  random <- sample(1:208, size = 208)
+  cards[random, ]
+}
+```
+
+## Probability function
+
+```{r}
+probability <- function(dealer_sum, player_sum, cards) {
+  min_score <- dealer_sum - player_sum
+  max_score <- 21 - player_sum
+  suitable_cards_num <- length(cards[cards[ ,3]<=max_score & cards[ ,3]>=min_score, ][ ,1])
+  probability <- round(suitable_cards_num / length(cards[ , 1]) * 100)
+}
+```
+
+## Start game function 
+
+```{r}
+start_game <- function(cards, dealer, player) {
+  cards <- shuffle(cards)
+  
+  dealer[nrow(dealer) + 1:2,] <- cards[1:2, ]
+  cards <- cards[-(1:2), ]
+  
+  player[nrow(player) + 1:2,] <- cards[1:2, ]
+  cards <- cards[-(1:2), ]
+  
+  cat("Dealer's hand:\n")
+  print(dealer[ , 1:3], row.names = FALSE)
+  cat("sum:", sum(dealer[, 3]))
+  
+  cat("\nPlayer's hand:\n")
+  print(player[ , 1:3], row.names = FALSE)
+  cat("sum:", sum(player[, 3]))
+  
+  win_probability <- probability(dealer_sum = sum(dealer[ ,3]), player_sum =  sum(player[ ,3]), cards = cards)
+  
+  if (sum(player[ , 3]) >= sum(dealer[ , 3])) {
+  cat("\nchances 100%")
+  } else {
+  cat("\nchances", win_probability, "%")
+  }
+  return(list(cards, dealer, player))
+}
+```
+
+## Deal function
+
+```{r}
+deal <- function(cards, dealer, player) {
+  player[nrow(player) + 1,] <- cards[1, ]
+  cards <- cards[-1, ]
+  
+  cat("Dealer's hand:\n")
+  print(dealer[ , 1:3], row.names = FALSE)
+  cat("sum", sum(dealer[, 3]))
+  
+  cat("\nPlayer's hand:\n")
+  print(player[ , 1:3], row.names = FALSE, colnames = FALSE)
+  cat("sum:", sum(player[, 3]))
+  
+  win_probability <- probability(dealer_sum = sum(dealer[ ,3]), player_sum =  sum(player[ ,3]), cards = cards)
+  
+  if (sum(player[ , 3]) > 21){
+  cat("\nchances 0%")
+  } else if (sum(player[ , 3]) > sum(dealer[ , 3])){
+  cat("\nchances 100%")
+  } else {
+  cat("\nchances", win_probability, "%")
+  }
+  return(list(cards, player))
+}
+```
+
+## Stop game function
+
+```{r}
+stop_game <- function(dealer, player) {
+  if (sum(player[ , 3]) > 21) {
+    cat("loose")
+  } else if (sum(player[ , 3]) >= sum(dealer[ , 3])) {
+    cat("win") 
+  } else {
+    cat("loose")
+    }
+}
+```
+
+## Example 1
+
+### Start of game
+
+```{r}
+deck_for_game <- rbind(deck, deck, deck, deck)
+
+current_status <- start_game(cards = deck_for_game, dealer = dealers_hand, player = players_hand)
+deck_for_game <- current_status[[1]]
+dealers_hand <- current_status[[2]]
+players_hand <- current_status[[3]]
+```
+
+### Stop game
+
+```{r}
+stop_game(dealer = dealers_hand, player = players_hand)
+```
+
+## Example 2
+
+### Start of game
+
+```{r}
+deck_for_game <- rbind(deck, deck, deck, deck)
+
+players_hand <- data.frame(face=character(),
+                 suit=character(), 
+                 value=integer()) 
+
+dealers_hand <- data.frame(face=character(),
+                 suit=character(), 
+                 value=integer())
+
+current_status <- start_game(cards = deck_for_game, dealer = dealers_hand, player = players_hand)
+deck_for_game <- current_status[[1]]
+dealers_hand <- current_status[[2]]
+players_hand <- current_status[[3]]
+```
+
+### Deal
+
+```{r}
+current_status <- deal(cards = deck_for_game, dealer = dealers_hand, player = players_hand)
+deck_for_game <- current_status[[1]]
+players_hand <- current_status[[2]]
+```
+
+### Stop game
+
+```{r}
+stop_game(dealer = dealers_hand, player = players_hand)
+```
