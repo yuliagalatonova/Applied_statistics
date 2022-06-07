@@ -1,0 +1,99 @@
+---
+title: "Applied statistics HW3"
+author: "Yulia Galatonova"
+date: '2022-06-05'
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+require(RIdeogram)
+
+gene_mapping <- read.csv('gene_mapping.tsv', sep='\t')
+zanu <- read.csv('ZANU_genes.tsv', sep='\t')
+dongola <- read.csv('DONGOLA_genes.tsv', sep='\t')
+```
+
+# Generating synteny dual comparison dataframe
+
+```{r}
+library(stringr)
+
+# split column "DONG" with information from NCBI to separate columns
+gene_mapping[c('dongola_id', 'dongola_middle', 'dongola_strand', 
+     'dongola_length', 'dongola_gene')] <- str_split_fixed(gene_mapping$DONG, 
+      ',', 5)
+
+# changing NCBI chromosome names (X chromosome is named as "1" because for
+# generating synteny figure numeric numbers of chromosomes are required)
+gene_mapping$dongola_id <- sub("NC_053517.1", "2", gene_mapping$dongola_id)
+gene_mapping$dongola_id <- sub("NC_053518.1", "3", gene_mapping$dongola_id)
+gene_mapping$dongola_id <- sub("NC_053519.1", "1", gene_mapping$dongola_id)
+
+gene_mapping$contig <- sub("X", "1", gene_mapping$contig)
+
+# leave genes that map only between the same chromosomes: X-X, 2-2, 3-3
+gene_mapping <- gene_mapping[gene_mapping$contig == gene_mapping$dongola_id, ]
+
+# generating vectors with start and end coordinates for genes of zanu species
+# also generating vector for direction color (if strand direction for zanu and 
+# dongola genes is the same it's colored in blue and if strands direction is 
+# different it's colored in red)
+start1 <- c()
+end1 <- c()
+direction <- c()
+for (i in (1:length(gene_mapping$contig))){
+  if (gene_mapping[i, "strand"] == gene_mapping[i, "dongola_strand"]) {
+    direction <- append(direction, "0080cc")
+  } else {
+    direction <- append(direction, "e64e60")
+  }
+  gene <- gene_mapping[i, "name"]
+  start1 <- append(start1, zanu[zanu$ID == gene, "start"])
+  end1 <- append(end1, zanu[zanu$ID == gene, "end"])
+}
+
+# generating vectors with start and end coordinates for genes of dongola species
+start2 <- c()
+end2 <- c()
+for (i in (1:length(gene_mapping$contig))){
+  gene <- gene_mapping[i, "DONG"]
+  gene <- gsub(".+DONG_(gene-LOC1.+)", "\\1", gene)
+  start2 <- append(start2, dongola[dongola$ID == gene, "start"])
+  end2 <- append(end2, dongola[dongola$ID == gene, "end"])
+}
+
+#construct synetny_dual_comparison data frame using previously generated vectors
+synteny_dual_comparison <- data.frame(Species_1 = gene_mapping$contig, 
+          Start_1 = start1, End_1 = end1, Species_2 = gene_mapping$dongola_id, 
+          Start_2 = start2, End_2 = end2, fill = direction)
+synteny_dual_comparison$Species_1 <-as.numeric(synteny_dual_comparison$Species_1)
+synteny_dual_comparison$Species_2 <-as.numeric(synteny_dual_comparison$Species_2)
+head(synteny_dual_comparison)
+```
+
+# Generating karyotype dual comparison dataframe
+
+```{r}
+Chr <- c('X', '2', '3', 'X', '2', '3')
+Start <- c(1, 1, 1, 1, 1, 1)
+End <- c(27238055, 114783175, 97973315, 26913133, 111988354, 95710210)
+fill <- c('969696', '969696', '969696', '969696', '969696', '969696')
+species <- c("ZANU", "ZANU", "ZANU", "DONGOLA", "DONGOLA", "DONGOLA")
+size <- c(11, 11, 11, 11, 11, 11)
+color <- c(252525, 252525, 252525, 252525, 252525, 252525)
+karyotype_dual_comparison <- data.frame(Chr = Chr, Start = Start, End = End, 
+          fill = fill, species = species, size = size, color = color)
+head(karyotype_dual_comparison)
+```
+
+# Generating synteny figure
+
+```{r}
+ideogram(karyotype = karyotype_dual_comparison, 
+         synteny = synteny_dual_comparison)
+convertSVG("chromosome.svg", device = "png")
+```
+
+![ZANU vs DONGOLA synteny (red color - different strands direction, blue color - same strands direction)](chromosome1.png)
